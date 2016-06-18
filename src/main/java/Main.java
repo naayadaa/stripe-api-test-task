@@ -4,7 +4,6 @@ import com.stripe.model.*;
 import com.stripe.net.RequestOptions;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -17,10 +16,13 @@ public class Main {
     public static void main(String[] args){
 
         Stripe.apiKey = PLATFORM_SECRET_KEY;
-        RequestOptions requestOptions = RequestOptions.builder().setApiKey(PLATFORM_SECRET_KEY).build();
         try {
-            /*Account account = Account.retrieve(requestOptions);
+            /*RequestOptions requestOptions = RequestOptions.builder().setApiKey(PLATFORM_SECRET_KEY).build();
+            Account account = Account.retrieve(requestOptions);
             System.out.println(account);*/
+
+            StripeAPIExecutor stripeAPIExecutor = new StripeAPIExecutor();
+            stripeAPIExecutor.deleteAllCustomers();
 
             Map<String, Object> tokenParams = new HashMap<String, Object>();
             Map<String, Object> cardParams = new HashMap<String, Object>();
@@ -30,34 +32,30 @@ public class Main {
             cardParams.put("cvc", "314");
             tokenParams.put("card", cardParams);
 
-            Token token = Token.create(tokenParams);
+            Map<String, Object> tokenParams2 = new HashMap<String, Object>();
+            Map<String, Object> cardParams2 = new HashMap<String, Object>();
+            cardParams2.put("number", "4242424242424242");
+            cardParams2.put("exp_month", 12);
+            cardParams2.put("exp_year", 2017);
+            cardParams2.put("cvc", "123");
+            tokenParams2.put("card", cardParams2);
 
-            Map<String, Object> customerParams = new HashMap<String, Object>();
-            customerParams.put("description", "Test customer Naya test@example.com");
-            customerParams.put("source", token.getId());
+            Map<String, Object> tokenParams3 = new HashMap<String, Object>();
+            Map<String, Object> cardParams3 = new HashMap<String, Object>();
+            cardParams3.put("number", "4242424242424242");
+            cardParams3.put("exp_month", 8);
+            cardParams3.put("exp_year", 2017);
+            cardParams3.put("cvc", "123");
+            tokenParams3.put("card", cardParams2);
 
-            Customer customer = Customer.create(customerParams);
+            Customer nayaCustomer = stripeAPIExecutor.createCustomer(tokenParams, "Test customer Naya naya@example.com");
+            Customer vanyaCustomer = stripeAPIExecutor.createCustomer(tokenParams2, "Test customer Vanya vanya@example.com");
 
-            Map<String, Object> params = new HashMap<String, Object>();
-            params.put("source", Token.create(tokenParams).getId());
+            Card secondCard = (Card) stripeAPIExecutor.createCard(tokenParams3, nayaCustomer);
 
-            System.out.println(customer.getSources().create(params));
-
-            Map<String, Object> chargeParams = new HashMap<String, Object>();
-            chargeParams.put("amount", 400);
-            chargeParams.put("currency", "usd");
-            chargeParams.put("source", Token.create(tokenParams).getId());
-            chargeParams.put("description", "Charge for Naya test@example.com");
-
-            Charge.create(chargeParams);
-
-            Map<String, Object> listCustomerParams = new HashMap<String, Object>();
-            customerParams.put("limit", 20);
-            List<Customer> customerCollection = Customer.list(listCustomerParams).getData();
-
-            for(Customer cu : customerCollection){
-                Customer.retrieve(cu.getId()).delete();
-            }
+            Charge charge1 = stripeAPIExecutor.createCharge(tokenParams, 5000, "usd", "Charge for Naya");
+            Charge charge2 = stripeAPIExecutor.createCharge(tokenParams2, 3000, "usd", "Charge for Vanya");
+            Charge charge3 = stripeAPIExecutor.createCharge(tokenParams2, 8000, "usd", "Charge for second Naya's csrd");
 
 
         } catch (AuthenticationException e) {
